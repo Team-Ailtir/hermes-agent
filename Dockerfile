@@ -207,9 +207,8 @@ RUN mkdir -p /opt/hermes/bin && \
     cp /opt/hermes/docker/hermes-exec-shim.sh /opt/hermes/bin/hermes && \
     chmod 0755 /opt/hermes/bin/hermes && \
     printf 'docker\n' > /opt/hermes/.install_method && \
-    chown -R root:root /opt/hermes && \
-    chmod -R a+rX /opt/hermes && \
-    chmod -R a-w /opt/hermes
+    find /opt/hermes -xdev ! -user root -exec chown root:root {} + && \
+    find /opt/hermes -xdev -perm /022 -exec chmod go-w {} +
 # The ``.install_method`` stamp is baked next to the running code (the install
 # tree), NOT into $HERMES_HOME. $HERMES_HOME (/opt/data) is a shared data
 # volume that is commonly bind-mounted from the host and even shared with a

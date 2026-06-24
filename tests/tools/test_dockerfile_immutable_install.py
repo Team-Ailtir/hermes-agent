@@ -17,14 +17,16 @@ def test_dockerfile_makes_opt_hermes_root_owned_and_non_writable() -> None:
 
     assert "COPY --chown=hermes:hermes . ." not in text
     assert "COPY . ." in text
-    assert "chown -R root:root /opt/hermes" in text
-    assert "chmod -R a+rX /opt/hermes" in text
-    assert "chmod -R a-w /opt/hermes" in text
+    assert "find /opt/hermes -xdev ! -user root -exec chown root:root {} +" in text
+    assert "find /opt/hermes -xdev -perm /022 -exec chmod go-w {} +" in text
+    assert "chown -R root:root /opt/hermes" not in text
+    assert "chmod -R a+rX /opt/hermes" not in text
+    assert "chmod -R a-w /opt/hermes" not in text
 
     immutable_block = re.search(
         r"RUN mkdir -p /opt/hermes/bin && \\\n"
         r"(?:.*\\\n)+?"
-        r"\s+chmod -R a-w /opt/hermes",
+        r"\s+find /opt/hermes -xdev -perm /022 -exec chmod go-w \{\} \+",
         text,
     )
     assert immutable_block, "Dockerfile must lock /opt/hermes after installing code/deps"
@@ -76,7 +78,7 @@ def test_dockerfile_bakes_code_scoped_install_method_stamp() -> None:
     immutable_block = re.search(
         r"RUN mkdir -p /opt/hermes/bin && \\\n"
         r"(?:.*\\\n)+?"
-        r"\s+chmod -R a-w /opt/hermes",
+        r"\s+find /opt/hermes -xdev -perm /022 -exec chmod go-w \{\} \+",
         text,
     )
     assert immutable_block, "immutable block must exist"
